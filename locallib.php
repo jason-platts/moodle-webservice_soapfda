@@ -513,13 +513,13 @@ class '.$classname.' {
 
     /**
      * Validates submitted value, comparing it to a description. If anything is incorrect
-     * invalid_return_value_exception is thrown. Also casts the values to the type specified in
+     * moodle_exception is thrown. Also casts the values to the type specified in
      * the description.
      *
      * @param external_description $description description of parameters or null if no return value
      * @param mixed $value the actual values
      * @return mixed params with added defaults for optional items
-     * @throws invalid_return_value_exception
+     * @throws moodle_exception
      */
     public static function validate_and_cast_values($description, $value) {
         if (is_null($description)){
@@ -527,7 +527,7 @@ class '.$classname.' {
         }
         if ($description instanceof external_value) {
             if (is_array($value) or is_object($value)) {
-                throw new invalid_return_value_exception('Scalar type expected, array or object received.');
+                throw new moodle_exception('Scalar type expected, array or object received.');
             }
 
             if ($description->type == PARAM_BOOL) {
@@ -539,14 +539,17 @@ class '.$classname.' {
             return validate_param($value, $description->type, $description->allownull, 'Invalid external api parameter');
 
         } else if ($description instanceof external_single_structure) {
+            if ($value instanceof stdClass) {
+                $value = (array) $value;
+            }
             if (!is_array($value)) {
-                throw new invalid_return_value_exception('Only arrays accepted.');
+                throw new moodle_exception('Only arrays accepted.');
             }
             $result = array();
             foreach ($description->keys as $key=>$subdesc) {
                 if (!array_key_exists($key, $value)) {
                     if ($subdesc->required == VALUE_REQUIRED) {
-                        throw new invalid_return_value_exception('Missing required key in single structure: '.$key);
+                        throw new moodle_exception('Missing required key in single structure: '.$key);
                     }
                     if ($subdesc instanceof external_value) {
                         if ($subdesc->required == VALUE_DEFAULT) {
@@ -563,7 +566,7 @@ class '.$classname.' {
 
         } else if ($description instanceof external_multiple_structure) {
             if (!is_array($value)) {
-                throw new invalid_return_value_exception('Only arrays accepted.');
+                throw new moodle_exception('Only arrays accepted.');
             }
             $result = array();
             foreach ($value as $param) {
@@ -572,7 +575,7 @@ class '.$classname.' {
             return $result;
 
         } else {
-            throw new invalid_return_value_exception('Invalid external api description.');
+            throw new moodle_exception('Invalid external api description.');
         }
     }
 }
